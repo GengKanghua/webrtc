@@ -6,7 +6,7 @@ bind_addresses:
   - "::"
 
 keys:
-  devkey: devsecret
+  devkey: devsecret_change_me_32chars_long_1234
 
 rtc:
   use_external_ip: true

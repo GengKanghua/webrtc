@@ -13,7 +13,7 @@ const {
   PORT = 3000,
   LIVEKIT_URL = 'ws://localhost:7880',
   LIVEKIT_API_KEY = 'devkey',
-  LIVEKIT_API_SECRET = 'devsecret',
+  LIVEKIT_API_SECRET = 'devsecret_change_me_32chars_long_1234',
   TURN_DOMAIN,
   TURN_USERNAME,
   TURN_PASSWORD,
