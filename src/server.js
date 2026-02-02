@@ -29,7 +29,7 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, ts: Date.now() });
 });
 
-app.get('/api/token', (req, res) => {
+app.get('/api/token', async (req, res) => {
   const room = req.query.room || 'live';
   const identity = req.query.identity;
   const role = (req.query.role || 'publisher').toLowerCase();
@@ -70,13 +70,20 @@ app.get('/api/token', (req, res) => {
     );
   }
 
-  res.json({
-    url: LIVEKIT_URL,
-    token: at.toJwt(),
-    iceServers,
-    role,
-    room,
-  });
+  try {
+    const jwt = await at.toJwt();
+    res.json({
+      url: LIVEKIT_URL,
+      token: jwt,
+      iceServers,
+      role,
+      room,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('token generation failed', err);
+    res.status(500).json({ error: 'token generation failed' });
+  }
 });
 
 app.use((_req, res) => {
