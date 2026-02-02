@@ -12,7 +12,8 @@ services:
       - "50000-50100:50000-50100/udp" # media RTP/RTCP
     depends_on:
       - turn
-
+    networks:
+      - "mynet"
   turn:
     image: coturn/coturn:4.6
     command: ["-c", "/etc/turnserver.conf"]
@@ -23,3 +24,10 @@ services:
       - "3478:3478/tcp"
       - "5349:5349/tcp"
       - "5349:5349/udp"
+    networks:
+      - "mynet"
+
+networks:
+  mynet:
+    external: true
+    name: "mynet"
