@@ -37,7 +37,11 @@
 
   <script>
     // UMD 全局名是 LivekitClient
-    const { Room, RoomEvent } = window.LivekitClient || {};
+    const LK = window.LivekitClient;
+    if (!LK) {
+      alert('livekit-client 未加载，请检查 /lib/livekit-client.umd.min.js 是否可访问');
+    }
+    const { Room, RoomEvent } = LK || {};
     let room;
     let statsTimer;
     let audioEnabled = true;

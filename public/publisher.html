@@ -57,7 +57,12 @@
 
   <script>
     // livekit-client UMD exposes window.LivekitClient
-    const { Room, RoomEvent, VideoPresets, VideoCodec, createLocalTracks } = window.LivekitClient || {};
+    const LK = window.LivekitClient;
+    if (!LK) {
+      alert('livekit-client 未加载，请检查 /lib/livekit-client.umd.min.js 是否可访问');
+    }
+    const { Room, RoomEvent, VideoPresets, createLocalTracks } = LK || {};
+    const H264 = (LK && LK.VideoCodec && LK.VideoCodec.H264) ? LK.VideoCodec.H264 : 'h264';
     let room;
     let statsTimer;
 
@@ -82,7 +87,7 @@
         dynacast: true,
         publishDefaults: {
           simulcast,
-          videoCodec: VideoCodec.H264,
+          videoCodec: H264,
           videoEncoding: { maxBitrate: kbps * 1000, maxFramerate: 30 },
           dtx: true,
           red: false,
@@ -108,7 +113,7 @@
       for (const track of tracks) {
         await room.localParticipant.publishTrack(track, {
           simulcast,
-          videoCodec: VideoCodec.H264,
+          videoCodec: H264,
           videoEncoding: { maxBitrate: kbps * 1000, maxFramerate: 30 },
         });
       }
