@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Publisher | WebRTC IPv6</title>
-  <script src="https://unpkg.com/livekit-client@2.4.0/dist/livekit-client.umd.min.js"></script>
+  <script src="./lib/livekit-client.umd.min.js"></script>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 18px; background: #0b1224; color: #e6ecf5; }
     .card { background: #10182f; border: 1px solid #1d2a46; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.35); }
@@ -56,7 +56,8 @@
   </div>
 
   <script>
-    const { Room, RoomEvent, VideoPresets, VideoCodec } = LiveKit;
+    // livekit-client UMD exposes window.LivekitClient
+    const { Room, RoomEvent, VideoPresets, VideoCodec, createLocalTracks } = window.LivekitClient || {};
     let room;
     let statsTimer;
 
@@ -95,7 +96,7 @@
 
       await room.connect(url, token);
 
-      const tracks = await LiveKit.createLocalTracks({
+      const tracks = await createLocalTracks({
         audio: true,
         video: {
           resolution,

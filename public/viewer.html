@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Viewer | WebRTC IPv6</title>
-  <script src="https://unpkg.com/livekit-client@2.4.0/dist/livekit-client.umd.min.js"></script>
+  <script src="./lib/livekit-client.umd.min.js"></script>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; background: radial-gradient(circle at 20% 20%, #14203a, #0b1224); color: #e6ecf5; }
     header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -36,7 +36,8 @@
   </div>
 
   <script>
-    const { Room, RoomEvent } = LiveKit;
+    // UMD 全局名是 LivekitClient
+    const { Room, RoomEvent } = window.LivekitClient || {};
     let room;
     let statsTimer;
     let audioEnabled = true;
