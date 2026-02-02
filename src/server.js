@@ -5,7 +5,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { AccessToken } = require('livekit-server-sdk');
 
-dotenv.config();
+// Ensure .env is loaded even if cwd changes (pm2/systemd)
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
 

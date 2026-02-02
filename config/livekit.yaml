@@ -2,7 +2,6 @@ log_level: info
 
 port: 7880
 bind_addresses:
-  - 0.0.0.0
   - "::"
 
 keys:
@@ -16,7 +15,7 @@ rtc:
   stun_servers:
     - stun.l.google.com:19302
   turn_servers:
-    - host: turn.example.com
+    - host: turn.gengkh.xyz
       port: 443
       protocol: tls
       username: turnuser
