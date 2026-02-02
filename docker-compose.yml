@@ -6,8 +6,6 @@ services:
     command: ["--config", "/etc/livekit/livekit.yaml"]
     volumes:
       - ./config/livekit.yaml:/etc/livekit/livekit.yaml:ro
-    environment:
-      - LIVEKIT_KEYS=devkey:devsecret
     ports:
       - "7880:7880/tcp"     # signaling (WS/WSS)
       - "7881:7881/tcp"     # RTC over TCP fallback
