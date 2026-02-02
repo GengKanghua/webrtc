@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publisher | WebRTC IPv6</title>
+  <script src="https://unpkg.com/livekit-client@2.4.0/dist/livekit-client.umd.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 18px; background: #0b1224; color: #e6ecf5; }
+    .card { background: #10182f; border: 1px solid #1d2a46; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.35); }
+    label { display: block; margin: 6px 0 2px; color: #9fb1d6; }
+    input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #304063; background: #0f1a33; color: #e6ecf5; }
+    button { cursor: pointer; background: linear-gradient(135deg, #2d8cf0, #0bd3d3); border: none; font-weight: 700; }
+    video { width: 100%; max-height: 60vh; background: #000; border-radius: 12px; }
+    #status { color: #7ae0ff; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    small { color: #7a8cac; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>主播端</h2>
+    <p id="status">未连接</p>
+    <div class="row">
+      <div>
+        <label>房间</label>
+        <input id="room" value="live">
+      </div>
+      <div>
+        <label>昵称</label>
+        <input id="name" placeholder="alice" value="host-1">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>分辨率</label>
+        <select id="resolution">
+          <option value="720p">1280x720@30</option>
+          <option value="1080p">1920x1080@30</option>
+          <option value="480p">854x480@30</option>
+        </select>
+      </div>
+      <div>
+        <label>码率 (kbps)</label>
+        <input id="bitrate" type="number" value="2200">
+      </div>
+    </div>
+    <label><input type="checkbox" id="simulcast" checked> 启用分层编码 (simulcast)</label>
+    <button id="go">开始推流</button>
+    <small>提示：浏览器自动使用 GPU H.264；确保系统启用硬件编码。</small>
+  </div>
+
+  <div class="card">
+    <video id="preview" autoplay playsinline muted></video>
+    <pre id="stats"></pre>
+  </div>
+
+  <script>
+    const { Room, RoomEvent, VideoPresets, VideoCodec } = LiveKit;
+    let room;
+    let statsTimer;
+
+    const presetMap = {
+      '480p': VideoPresets.h540,
+      '720p': VideoPresets.h720,
+      '1080p': VideoPresets.h1080,
+    };
+
+    async function start() {
+      const identity = document.getElementById('name').value || `host-${Date.now()}`;
+      const roomName = document.getElementById('room').value || 'live';
+      const kbps = Number(document.getElementById('bitrate').value || '2200');
+      const resolution = presetMap[document.getElementById('resolution').value] || VideoPresets.h720;
+      const simulcast = document.getElementById('simulcast').checked;
+
+      const tokenResp = await fetch(`/api/token?identity=${encodeURIComponent(identity)}&room=${encodeURIComponent(roomName)}&role=publisher`);
+      const { token, url } = await tokenResp.json();
+
+      room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        publishDefaults: {
+          simulcast,
+          videoCodec: VideoCodec.H264,
+          videoEncoding: { maxBitrate: kbps * 1000, maxFramerate: 30 },
+          dtx: true,
+          red: false,
+        },
+        audioCaptureDefaults: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+        videoCaptureDefaults: { resolution },
+      });
+
+      room.on(RoomEvent.ConnectionStateChanged, (state) => setStatus(`连接状态: ${state}`));
+      room.on(RoomEvent.Disconnected, () => setStatus('已断开'));
+
+      await room.connect(url, token);
+
+      const tracks = await LiveKit.createLocalTracks({
+        audio: true,
+        video: {
+          resolution,
+          frameRate: 30,
+          facingMode: 'user',
+        },
+      });
+
+      for (const track of tracks) {
+        await room.localParticipant.publishTrack(track, {
+          simulcast,
+          videoCodec: VideoCodec.H264,
+          videoEncoding: { maxBitrate: kbps * 1000, maxFramerate: 30 },
+        });
+      }
+
+      const videoTrack = tracks.find((t) => t.kind === 'video');
+      if (videoTrack) {
+        videoTrack.attach(document.getElementById('preview'));
+      }
+
+      startStats();
+      setStatus('推流中');
+    }
+
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    async function startStats() {
+      clearInterval(statsTimer);
+      statsTimer = setInterval(async () => {
+        if (!room) return;
+        const stats = await room.engine.client.getStats();
+        const out = [];
+        stats.forEach(report => {
+          report.outboundRtp?.forEach(r => {
+            if (r.kind === 'video') {
+              out.push(`video: ${Math.round(r.bitrate/1000)} kbps, fps ${r.framesPerSecond}, rtt ${r.roundTripTime?.toFixed(3) || 0}s`);
+            }
+            if (r.kind === 'audio') {
+              out.push(`audio: ${Math.round(r.bitrate/1000)} kbps`);
+            }
+          });
+        });
+        document.getElementById('stats').textContent = out.join('\\n');
+      }, 2000);
+    }
+
+    document.getElementById('go').addEventListener('click', () => {
+      start().catch((err) => setStatus(`错误: ${err.message}`));
+    });
+  </script>
+</body>
+</html>

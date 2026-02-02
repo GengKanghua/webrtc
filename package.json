@@ -1,0 +1,21 @@
+{
+  "name": "webrtc",
+  "version": "1.0.0",
+  "description": "IPv6-friendly WebRTC live streaming scaffold (LiveKit + TURN + simple signal/token service).",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "livekit-server-sdk": "^2.15.0",
+    "morgan": "^1.10.1"
+  }
+}

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebRTC Live (IPv6)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 24px; color: #111; background: #f7f7fb; }
+    h1 { margin-bottom: 8px; }
+    a.card { display: block; padding: 14px 16px; margin: 12px 0; background: #fff; border: 1px solid #e0e0ea; border-radius: 10px; text-decoration: none; color: #111; box-shadow: 0 6px 20px rgba(0,0,0,0.05); }
+    small { color: #666; display: block; margin-top: 6px; }
+    code { background: #eee; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>WebRTC IPv6 Demo</h1>
+  <p>Pick a role:</p>
+  <a class="card" href="./publisher.html">📡 主播 / 发布端 <small>使用笔记本摄像头推流，硬件 H.264 + 低延迟参数</small></a>
+  <a class="card" href="./viewer.html">📱 观众 / 播放端 <small>手机浏览器观看，自动降码率</small></a>
+  <p>服务器 token 端点：<code>/api/token?room=live&identity=alice&role=publisher|subscriber</code></p>
+</body>
+</html>

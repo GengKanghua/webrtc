@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viewer | WebRTC IPv6</title>
+  <script src="https://unpkg.com/livekit-client@2.4.0/dist/livekit-client.umd.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; background: radial-gradient(circle at 20% 20%, #14203a, #0b1224); color: #e6ecf5; }
+    header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+    #status { color: #7ae0ff; }
+    .wrap { padding: 0 20px 20px; }
+    video { width: 100%; max-height: calc(100vh - 120px); background: #000; border-radius: 14px; }
+    input, button { padding: 10px 12px; border-radius: 8px; border: 1px solid #1f3354; background: #0f1a33; color: #e6ecf5; }
+    button { cursor: pointer; background: linear-gradient(135deg, #22c1c3, #2d8cf0); border: none; font-weight: 700; }
+    .controls { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 10px; margin-bottom: 10px; }
+    pre { background: #0f1a33; border: 1px solid #1f3354; border-radius: 10px; padding: 10px; white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="font-weight:700;">观众端</div>
+      <div id="status">未连接</div>
+    </div>
+    <button id="join">进入房间</button>
+  </header>
+  <div class="wrap">
+    <div class="controls">
+      <input id="room" value="live" aria-label="房间">
+      <input id="name" value="viewer-1" aria-label="昵称">
+      <button id="mute">静音切换</button>
+    </div>
+    <video id="remoteVideo" autoplay playsinline></video>
+    <pre id="stats"></pre>
+  </div>
+
+  <script>
+    const { Room, RoomEvent } = LiveKit;
+    let room;
+    let statsTimer;
+    let audioEnabled = true;
+
+    async function join() {
+      const identity = document.getElementById('name').value || `viewer-${Date.now()}`;
+      const roomName = document.getElementById('room').value || 'live';
+      const tokenResp = await fetch(`/api/token?identity=${encodeURIComponent(identity)}&room=${encodeURIComponent(roomName)}&role=subscriber`);
+      const { token, url } = await tokenResp.json();
+
+      room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        stopLocalTrackOnUnpublish: true,
+      });
+
+      room
+        .on(RoomEvent.TrackSubscribed, (_track, pub, participant) => {
+          if (pub.kind === 'video') {
+            const mediaTrack = pub.track;
+            mediaTrack.attach(document.getElementById('remoteVideo'));
+            setStatus(`观看中：${participant.identity}`);
+          }
+        })
+        .on(RoomEvent.ConnectionStateChanged, (state) => setStatus(`连接状态: ${state}`))
+        .on(RoomEvent.Disconnected, () => setStatus('已断开'));
+
+      await room.connect(url, token, { autoSubscribe: true });
+      await room.startAudio(); // user gesture already occurred (button)
+      startStats();
+    }
+
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    function toggleMute() {
+      audioEnabled = !audioEnabled;
+      room?.remoteParticipants.forEach(p => {
+        p.audioTracks.forEach(at => {
+          if (at.track) at.track.mediaStreamTrack.enabled = audioEnabled;
+        });
+      });
+    }
+
+    async function startStats() {
+      clearInterval(statsTimer);
+      statsTimer = setInterval(async () => {
+        if (!room) return;
+        const stats = await room.engine.client.getStats();
+        const out = [];
+        stats.forEach(report => {
+          report.inboundRtp?.forEach(r => {
+            if (r.kind === 'video') {
+              out.push(`video: ${Math.round(r.bitrate/1000)} kbps, fps ${r.framesPerSecond}, rtt ${r.roundTripTime?.toFixed(3) || 0}s`);
+            }
+            if (r.kind === 'audio') {
+              out.push(`audio: ${Math.round(r.bitrate/1000)} kbps`);
+            }
+          });
+        });
+        document.getElementById('stats').textContent = out.join('\\n');
+      }, 2000);
+    }
+
+    document.getElementById('join').addEventListener('click', () => {
+      join().catch(err => setStatus(`错误: ${err.message}`));
+    });
+    document.getElementById('mute').addEventListener('click', toggleMute);
+  </script>
+</body>
+</html>
