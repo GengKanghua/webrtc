@@ -51,6 +51,11 @@
       const roomName = document.getElementById('room').value || 'live';
       const tokenResp = await fetch(`/api/token?identity=${encodeURIComponent(identity)}&room=${encodeURIComponent(roomName)}&role=subscriber`);
       const { token, url } = await tokenResp.json();
+      if (typeof token !== 'string') {
+        console.error('token 不是字符串，实际为', token);
+        setStatus('token 获取异常，请检查 /api/token 响应');
+        return;
+      }
 
       room = new Room({
         adaptiveStream: true,
